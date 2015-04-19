@@ -3,9 +3,9 @@ title: "Assignment 1 simulation"
 author: "Joris Schut"
 date: "Saturday, February 28, 2015"
 output:
+  pdf_document: default
   html_document:
     keep_md: yes
-  pdf_document: default
 ---
 
 ##Introduction
@@ -15,10 +15,6 @@ This document was made in the context of the statistical inference MOOC by Johns
 
 First, the parameters for the sample size (n; 40), lambda (0.2) and the number of experiments (runs; 1000) was set (values for the parameters were given in the assignment details). In order to create a reproducible analysis, the seed was set to 111.
 
-Using these variables the experiential mean of the experiment was determined. The values of the experiment were then plotted and the value of the mean were printed.
-
-Based on the characteristics of the exponential distribution, the theoretical mean (1/lambda) was calculated for a distribution of 40 exponentials. 
-
 ```{r, echo=FALSE, fig.width=5, fig.height=3}
 
 #Set parameters
@@ -27,100 +23,60 @@ n = 40
 lambda = 0.2
 runs = 1000
 
-#Determine the experimental mean
-expvalues <- rexp(n, lambda)
-expmean1 <- mean(expvalues)
+samples <- replicate(runs,rexp(40,lambda))
+sampleMeans <- apply(samples,2,mean)
+sampleVars <- apply(samples,2,var)
 
-hist(expvalues, main="Histogram of the random sample", xlab="Sample values")
-
-#Calcualte the theoretical mean[1]
-theomean1 <- 1/lambda
-print(paste("Experimental mean (1 experiment): ", expmean1, "Theoretical mean: ", theomean1))
 ```
 
-The difference between the experiential and theoretical value is given by subtracting both values and taking the absolute value of the result.
+Based on the characteristics of the exponential distribution, the theoretical mean (1/lambda) was calculated for 1000 experiments of  a distribution of 40 exponentials.
 
 ```{r, echo=FALSE}
-#Determine the absolute difference between the theoretical and experimental mean
-diffmean1 <- abs(theomean1 - expmean1)
-print(paste("Differnce in means: ", diffmean1))
+meanTheory <- 1/lambda
 ```
+
+The distribution of means was plotted in a histogram together with the theoretical (blue line) and experimental (red line) averages.
+
+```{r, echo=FALSE}
+hist(sampleMeans)
+abline(v=mean(sampleMeans), col="red", lwd=4)
+abline(v=meanTheory, col="blue", lwd=2)
+```
+
 
 ##2. Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution
+Based on the characteristics of the exponential distribution, the theoretical variance ((1/lambda)^2 was calculated for 1000 experiments of a distribution of 40 exponentials.
 
-Using the above variables the experiential variance of the experiment was determined. Based on the characteristics of the exponential distribution, the theoretical variance (1/(lambda^2)) was calculated.
-
-```{r, echo=FALSE}
-#Determine the experiental variance
-expvar1 <- var(expvalues)
-
-#Calculate the theoretical variance[1]
-theovar1 <- 1/(lambda^2)
-print(paste("Experimental variance: ", expvar1, "Theoretical variance: ", theovar1))
+```{r,echo=FALSE}
+meanVariance <- (1/lambda)^2
 ```
 
-The difference between the experiential and theoretical value is given by subtracting both values and taking the absolute value of the result.
+The distribution of means was plotted in a histogram together with the theoretical (blue line) and experimental (red line) averages.
 
 ```{r, echo=FALSE}
-#Determine the absolute difference between the theoretical and experimental variance
-diffvar1 <- abs(theovar1 - expvar1)
-print(paste("Differnce invariances: ", diffvar1))
+hist(sampleVars)
+abline(v=mean(sampleVars), col="red", lwd=1)
+abline(v=meanVariance, col="blue", lwd=1)
 ```
+
 
 ##3 Show that the distribution is approximately normal
 
-1000 experiments were conducted were the mean value of the experiment was stored in the mns variable. Two ways can be used to determine if the distribution of means is normal. First, the histogram of the means be should bell-shaped and can be approximated by a normal distribution density function with the theoretical average for the distribution of a large collection of averages of 40 exponentials and the corresponding standard deviation (Central limit theorem). To compensate for the number of runs the values of the density function should be multiplied by the binwidth of the histogram*number of experiments[2]. The second method involves plotting the quantiles of a normal distribution in the same plot as the quantiles of the experimental data. If they overlap, the distribution of the experimental data is normal.
-
-First, the experiment is run for n=1000 (runs variable) times. The results are appended to the mns variable. Second, the values of the normal approximation are calculated for the distribution of a large collection of averages of 40 exponentials. Further, a normal density function is run to obtain the values used for the approximation.Third, a normal approximation can be simulated by using the the theoretical mean (same as for 1 experiment) for the distribution of a large collection of averages of 40 exponentials and the corresponding standard deviation (sqrt((1/(lambda^2))/n)) (Central limit theorem). To compensate for the number of runs the values of the density function should be multiplied by the binwidth of the histogram*number of experiments[2]. Fourth, the results of both the mns variable and the normal approximation are plotted in a single plot.
-
-```{r, echo=FALSE, fig.width=5, fig.height=3}
-#Determine the experimental mean
-mns <- NULL
-for (i in 1 : runs){
-  mns = append(mns, mean(rexp(n, lambda)))
-  }
-
-#Calculate theoretical values for the average and the variance
-theomean2 <- theomean1
-theovar2 <- (1/(lambda^2))/n
-print(paste("Theoretical mean: ", theomean2, "Theoretical variance: ", theovar2))
-
-#Create a an normal approximation
-binwidth <- 0.5 
-x <- seq(-4, 4, length=100)*theovar2 + theomean2
-hx <- binwidth*runs*dnorm(x, mean=theomean2, sd=sqrt(theovar2))
-
-#Plot the histogram of the experiments and the normal approximation
-hist(mns, breaks=seq(1,9,by=binwidth),main="Histogram of the average samples",
-     xlab="Sample average")
-lines(x, hx)
-```
-
-As the normal approximation fits pretty good with the histogram, normality of the distribution of the mean can be assumed. This is as stated in the central limit theorem. Using the alternative method (qualtile plot), similar results are found as is shown below.
+The Central Limit Theorem tells us that the sampling distribution of the mean of a population will be normally distributed, even if the population itself is not.
 
 ```{r, echo=FALSE, fig.width=5, fig.height=3}
 
-#Create the quartile values for the experimental and theoretical values
-histmns <- hist(mns, breaks=seq(1,9,by=binwidth), plot=FALSE)
-fmns<- histmns$density
-pmns <- pnorm(fmns, mean=theomean2, sd=sqrt(theovar2))
-qmns <- qnorm(pmns, mean=theomean2, sd=sqrt(theovar2))
-
-px <- pnorm(hx/(binwidth*runs), mean=theomean2, sd=sqrt(theovar2))
-qx <- qnorm(px, mean=theomean2, sd=sqrt(theovar2))
-
-#plot the theorethical and experimental values in a single plot
-plot(qx, qx, main="Normal approximation of experimental data", xlab="quartile",
-     ylab="quartile")
-lines(qmns, qmns)
+p <- ggplot() +
+geom_histogram(aes(x=sampleMeans,y=..density..),binwidth=0.1) +
+labs(title="Distribution of Sample Means") +
+geom_vline(aes(xintercept=meanTheory,colour="green"),size=1) +
+geom_vline(aes(xintercept=mean(sampleMeans),colour="blue"),size=1) +
+stat_function(aes(x=sampleMeans),fun=dnorm,arg=list(mean=meanTheory,sd=sqrt(varTheory/40)),colour="red",size=1)
+print(p)
 
 ```
 
-
-##External sources used for reference
-[1] [Wikipedia](http://en.wikipedia.org/wiki/Exponential_distribution#Mean.2C_variance.2C_moments_and_median)
-
-[2] [Fitting a Gausian curve to a histogram](http://www.theinformationlab.co.uk/2013/11/04/fitting-a-gaussian-normal-distribution-curve-to-a-histogram-in-tableau/)
+As the normal approximation fits pretty good with the histogram, normality of the distribution of the mean can be assumed.
 
 \newpage
 
